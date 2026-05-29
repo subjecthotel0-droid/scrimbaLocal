@@ -33,4 +33,4 @@ jobs:
           git merge upstream/main --allow-unrelated-histories -X theirs
 
       - name: Force Push Changes
-        run: git push -f origin main   
+        run: git push -f origin mainCopied!   
