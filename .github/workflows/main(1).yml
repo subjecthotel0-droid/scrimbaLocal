@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Mirror Update
-        uses: pixta-dev/repository-mirroring-action@v1
+        uses: pixta-dev/repository-mirroring-action@v1.5.1
         with:
           target_repo_url: git@github.com:subjecthotel0-droid/scrimbaLocal.git
           source_repo_url: https://github.com/scrimba/learn-fullstack-development.git   
