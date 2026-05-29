@@ -1,16 +1,19 @@
 name: Auto Sync with Upstream
 
 on:
-  workflow_dispatch: # Allows manual trigger
+  workflow_dispatch:
   schedule:
-    - cron: '0 0 * * *' # Daily at midnight
+    - cron: '0 0 * * *'
+
+permissions:
+  contents: write
 
 jobs:
   sync:
-    runs-on: ubuntu-latest # Runs on Linux, avoiding Windows path limits
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4 # Updated to v4
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -28,9 +31,6 @@ jobs:
       - name: Merge Upstream
         run: |
           git merge upstream/main --allow-unrelated-histories -X theirs
-          # If the original repo uses 'master', change 'upstream/main' to 'upstream/master'
 
-      - name: Push Changes
-        run: git push origin main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   
+      - name: Force Push Changes
+        run: git push -f origin main   
