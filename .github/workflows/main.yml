@@ -30,7 +30,10 @@ jobs:
 
       - name: Merge Upstream
         run: |
-          git merge upstream/main --allow-unrelated-histories -X theirs
+          git merge upstream/main --allow-unrelated-histories -X theirs || true
 
-      - name: Force Push Changes
-        run: git push -f origin main   
+      - name: Pull Latest Changes
+        run: git pull origin main --rebase --autostash
+
+      - name: Push Changes
+        run: git push origin main
