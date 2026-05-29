@@ -1,0 +1,37 @@
+name: Auto Sync with Upstream
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Runs every hour. Change to '0 0 * * *' for daily.
+  workflow_dispatch: # Allows you to run it manually
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Fetch all history
+
+      - name: Configure Git
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+
+      - name: Add Upstream Remote
+        run: git remote add upstream https://github.com/scrimba/learn-fullstack-development.git
+
+      - name: Fetch Upstream
+        run: git fetch upstream
+
+      - name: Merge Upstream (Allow Unrelated Histories)
+        run: |
+          git merge upstream/main --allow-unrelated-histories -X theirs
+          # Note: Replace 'main' with 'master' if the original repo uses master.
+          # '-X theirs' automatically accepts changes from the original repo in case of conflicts.
+
+      - name: Push Changes
+        run: git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   
