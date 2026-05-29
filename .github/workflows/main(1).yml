@@ -1,0 +1,16 @@
+name: Mirror Upstream
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mirror Update
+        uses: pixta-dev/repository-mirroring-action@v1
+        with:
+          target_repo_url: git@github.com:YOUR_USERNAME/YOUR_REPO.git
+          source_repo_url: https://github.com/ORIGINAL_OWNER/ORIGINAL_REPO.git   
