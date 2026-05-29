@@ -20,7 +20,7 @@ jobs:
           git config --global user.email 'github-actions@github.com'
 
       - name: Add Upstream Remote
-        run: git remote add upstream https://github.com/ORIGINAL_OWNER/ORIGINAL_REPO.git
+        run: git remote add upstream https://github.com/scrimba/learn-fullstack-development.git
 
       - name: Fetch Upstream
         run: git fetch upstream
