@@ -1,10 +1,8 @@
-name: Rename Folders with Trailing Spaces
+name: Rename Folders with Problematic Characters
 
 on:
   push:
     branches: [main]
-    paths:
-      - '**/'
   workflow_dispatch:
 
 jobs:
@@ -17,17 +15,74 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Rename folders with trailing spaces
+      - name: Rename folders with problematic characters
         run: |
-          # Find and rename folders with trailing spaces
-          while IFS= read -r -d '' folder; do
-            # Remove trailing spaces from folder name
-            new_name="${folder%"${folder##*[^ ]}"}"
-            if [ "$folder" != "$new_name" ]; then
-              echo "Renaming: '$folder' → '$new_name'"
-              mv "$folder" "$new_name"
+          #!/bin/bash
+          set -e
+          
+          # Find all directories (excluding .git)
+          find . -mindepth 1 -maxdepth 1 -type d ! -name '.git' ! -name '.github' | while read dir; do
+            original_name="${dir:2}"  # Remove './' prefix
+            new_name="$original_name"
+            
+            # Remove leading/trailing whitespace
+            new_name=$(echo "$new_name" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            
+            # Replace problematic characters with underscores
+            # Windows reserved: < > : " / \ | ? *
+            # Also handle other problematic chars: ; # @ ! ~ ` ' { } [ ] = + space at end
+            new_name=$(echo "$new_name" | sed 's/[<>:"/\\|?*;#@!~`'"'"'{}\[\]=+]/_/g')
+            
+            # Replace multiple consecutive underscores with single underscore
+            new_name=$(echo "$new_name" | sed 's/_\+/_/g')
+            
+            # Remove trailing underscores
+            new_name=$(echo "$new_name" | sed 's/_*$//')
+            
+            # Only rename if different
+            if [ "$original_name" != "$new_name" ]; then
+              echo "Renaming: '$original_name' → '$new_name'"
+              mv "./$original_name" "./$new_name"
             fi
-          done < <(find . -mindepth 1 -maxdepth 1 -type d -print0 | grep -z ' $')
+          done
+
+      - name: Rename files with problematic characters (recursively)
+        run: |
+          #!/bin/bash
+          set -e
+          
+          # Find all files (excluding .git)
+          find . -type f ! -path './.git/*' ! -path './.github/workflows/rename-folders.yml' | while read file; do
+            dir=$(dirname "$file")
+            filename=$(basename "$file")
+            extension="${filename##*.}"
+            basename_only="${filename%.*}"
+            
+            # Skip if it's just an extension
+            if [ "$basename_only" = "$filename" ]; then
+              basename_only="$filename"
+              new_filename="$filename"
+            else
+              # Remove leading/trailing whitespace
+              basename_only=$(echo "$basename_only" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+              
+              # Replace problematic characters
+              basename_only=$(echo "$basename_only" | sed 's/[<>:"/\\|?*;#@!~`'"'"'{}\[\]=+]/_/g')
+              
+              # Replace multiple consecutive underscores
+              basename_only=$(echo "$basename_only" | sed 's/_\+/_/g')
+              
+              # Remove trailing underscores
+              basename_only=$(echo "$basename_only" | sed 's/_*$//')
+              
+              new_filename="${basename_only}.${extension}"
+            fi
+            
+            if [ "$filename" != "$new_filename" ]; then
+              echo "Renaming file: '$filename' → '$new_filename'"
+              mv "$file" "$dir/$new_filename"
+            fi
+          done
 
       - name: Commit changes
         run: |
@@ -36,8 +91,9 @@ jobs:
           
           if git diff --quiet; then
             echo "No changes to commit"
-          else
-            git add -A
-            git commit -m "chore: remove trailing spaces from folder names"
-            git push
+            exit 0
           fi
+          
+          git add -A
+          git commit -m "chore: sanitize folder and file names to remove problematic characters"
+          git push
