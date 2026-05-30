@@ -1,0 +1,43 @@
+name: Rename Folders with Trailing Spaces
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/'
+  workflow_dispatch:
+
+jobs:
+  rename-folders:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Rename folders with trailing spaces
+        run: |
+          # Find and rename folders with trailing spaces
+          while IFS= read -r -d '' folder; do
+            # Remove trailing spaces from folder name
+            new_name="${folder%"${folder##*[^ ]}"}"
+            if [ "$folder" != "$new_name" ]; then
+              echo "Renaming: '$folder' → '$new_name'"
+              mv "$folder" "$new_name"
+            fi
+          done < <(find . -mindepth 1 -maxdepth 1 -type d -print0 | grep -z ' $')
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            git add -A
+            git commit -m "chore: remove trailing spaces from folder names"
+            git push
+          fi
